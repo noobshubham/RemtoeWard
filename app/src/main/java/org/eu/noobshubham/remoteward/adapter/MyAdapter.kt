@@ -12,7 +12,8 @@ import org.eu.noobshubham.remoteward.R
 import org.eu.noobshubham.remoteward.model.Todo
 
 
-class MyAdapter(private val todoList: ArrayList<Todo>) : RecyclerView.Adapter<MyAdapter.ViewHolder>() {
+class MyAdapter(private val todoList: ArrayList<Todo>) :
+    RecyclerView.Adapter<MyAdapter.ViewHolder>() {
     private var listener: OnClickListener? = null
 
     fun setListener(clickListener: OnClickListener) {
@@ -29,6 +30,13 @@ class MyAdapter(private val todoList: ArrayList<Todo>) : RecyclerView.Adapter<My
             }
         }
 
+        holder.itemView.setOnLongClickListener {
+            if (listener != null) {
+                listener!!.onItemLongClick(todo)
+            }
+            true
+        }
+
         holder.itemView.findViewById<ImageView>(R.id.btDelete).setOnClickListener {
             if (listener != null) {
                 listener!!.onItemDelete(todo)
@@ -41,7 +49,9 @@ class MyAdapter(private val todoList: ArrayList<Todo>) : RecyclerView.Adapter<My
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.list_item, parent, false))
+        return ViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.list_item, parent, false)
+        )
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -56,5 +66,6 @@ class MyAdapter(private val todoList: ArrayList<Todo>) : RecyclerView.Adapter<My
     interface OnClickListener {
         fun onItemClick(todo: Todo, position: Int)
         fun onItemDelete(todo: Todo)
+        fun onItemLongClick(todo: Todo)
     }
 }

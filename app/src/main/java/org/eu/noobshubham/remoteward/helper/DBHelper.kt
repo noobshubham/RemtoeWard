@@ -11,7 +11,7 @@ class DBHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        private const val DATABASE_VERSION = 1  // Database Version
+        private const val DATABASE_VERSION = 2  // Database Version
         private const val DATABASE_NAME = "remoteward_db" // Database Name
     }
 
@@ -23,6 +23,7 @@ class DBHelper(context: Context) :
     private val COLUMN_TITLE = "title"
     private val COLUMN_DESCRIPTION = "description"
     private val COLUMN_TIMESTAMP = "timestamp"
+    private val COLUMN_FAVORITE = "favorite"
 
     // Create table SQL query
     private val CREATE_TABLE = (
@@ -30,7 +31,8 @@ class DBHelper(context: Context) :
                     + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                     + COLUMN_TITLE + " TEXT,"
                     + COLUMN_DESCRIPTION + " TEXT,"
-                    + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP"
+                    + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    + COLUMN_FAVORITE + " INTEGER DEFAULT 0"
                     + ")")
 
     // 1) Select All Query, 2)looping through all rows and adding to list 3) close db connection, 4) return todos list
@@ -48,12 +50,44 @@ class DBHelper(context: Context) :
                         cursor!!.getInt(cursor.getColumnIndex(COLUMN_ID)),
                         cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
                         cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                        cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP))
+                        cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_FAVORITE))
                     )
                     todo.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID))
                     todo.title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
                     todo.desc = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
                     todo.timestamp = cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP))
+                    todo.favourite = cursor.getInt(cursor.getColumnIndex(COLUMN_FAVORITE))
+                    notes.add(todo)
+                } while (cursor.moveToNext())
+            }
+            db.close()
+            return notes
+        }
+
+    val getAllFavourites: ArrayList<Todo>
+        @SuppressLint("Range")
+        get() {
+            val notes = ArrayList<Todo>()
+            val selectQuery =
+                "SELECT  * FROM $TABLE_NAME WHERE $COLUMN_FAVORITE = 1 ORDER BY $COLUMN_TIMESTAMP DESC"
+
+            val db = this.writableDatabase
+            val cursor = db.rawQuery(selectQuery, null)
+            if (cursor.moveToFirst()) {
+                do {
+                    val todo = Todo(
+                        cursor!!.getInt(cursor.getColumnIndex(COLUMN_ID)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP)),
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_FAVORITE))
+                    )
+                    todo.id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID))
+                    todo.title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
+                    todo.desc = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
+                    todo.timestamp = cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP))
+                    todo.favourite = cursor.getInt(cursor.getColumnIndex(COLUMN_FAVORITE))
                     notes.add(todo)
                 } while (cursor.moveToNext())
             }
@@ -100,7 +134,7 @@ class DBHelper(context: Context) :
         val db = this.readableDatabase    // get readable database as we are not inserting anything
         val cursor = db.query(
             TABLE_NAME,
-            arrayOf(COLUMN_ID, COLUMN_TITLE, COLUMN_DESCRIPTION, COLUMN_TIMESTAMP),
+            arrayOf(COLUMN_ID, COLUMN_TITLE, COLUMN_DESCRIPTION, COLUMN_TIMESTAMP, COLUMN_FAVORITE),
             "$COLUMN_ID=?",
             arrayOf(id.toString()),
             null,
@@ -115,7 +149,8 @@ class DBHelper(context: Context) :
             cursor!!.getInt(cursor.getColumnIndex(COLUMN_ID)),
             cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)),
             cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-            cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP))
+            cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP)),
+            cursor.getInt(cursor.getColumnIndex(COLUMN_FAVORITE))
         )
 
         cursor.close()   // close the db connection
@@ -143,5 +178,17 @@ class DBHelper(context: Context) :
             arrayOf(todo.id.toString())
         ) // Issue SQL statement.
         return true
+    }
+
+    fun addToFavorites(todo: Todo) {
+        val db = this.writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_FAVORITE, 1)
+        db.update(
+            TABLE_NAME,
+            values,
+            "$COLUMN_ID = ?",
+            arrayOf(todo.id.toString())
+        )   // updating row
     }
 }

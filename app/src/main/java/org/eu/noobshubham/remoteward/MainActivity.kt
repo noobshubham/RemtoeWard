@@ -30,6 +30,10 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
         deleteConfirmation(todo)
     }
 
+    override fun onItemLongClick(todo: Todo) {
+        addToFavorites(todo)
+    }
+
     override fun onItemClick(todo: Todo, position: Int) {
         showNoteDialog(true, todo, position)
     }
@@ -67,7 +71,8 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
                 val currentTemp = findViewById<TextView>(R.id.currentTemperatureTextView)
                 val location = findViewById<TextView>(R.id.locationTextView)
                 currentTemp.text = "${response.body()?.current?.temp_c}°C"
-                location.text = "${response.body()?.location?.name}, ${response.body()?.location?.region}"
+                location.text =
+                    "${response.body()?.location?.name}, ${response.body()?.location?.region}"
             }
         }
 
@@ -103,6 +108,23 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
         alertDialog.setNegativeButton("NO") { dialog, _ ->
             dialog.cancel() //Cancel the dialog
         }
+        alertDialog.show()
+    }
+
+    private fun addToFavorites(todo: Todo) {
+        val alertDialog = AlertDialog.Builder(this)
+        alertDialog.setTitle("Add to Favorites...")
+        alertDialog.setMessage("Are you sure you want to add this to favorites?")
+        alertDialog.setIcon(R.drawable.baseline_star_border_24)
+        alertDialog.setPositiveButton("YES") { _, _ ->
+            dbHelper!!.addToFavorites(todo)
+            getTodoList()  // refreshing the list
+        }
+
+        alertDialog.setNegativeButton("NO") { dialog, _ ->
+            dialog.cancel() //Cancel the dialog
+        }
+
         alertDialog.show()
     }
 
