@@ -1,12 +1,10 @@
 package org.eu.noobshubham.remoteward
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -17,9 +15,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.eu.noobshubham.remoteward.adapter.MyAdapter
+import org.eu.noobshubham.remoteward.api.RetrofitBuilder
 import org.eu.noobshubham.remoteward.helper.DBHelper
 import org.eu.noobshubham.remoteward.model.Todo
+import org.eu.noobshubham.remoteward.model.WeatherData
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
     override fun onItemDelete(todo: Todo) {
@@ -34,7 +38,9 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
     private var dbHelper: DBHelper? = null
     private var todoList = ArrayList<Todo>()
     private lateinit var recyclerView: RecyclerView
+    private lateinit var response: Response<WeatherData>
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -49,6 +55,22 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
         }
         //Set the TodoList in myAdapter
         getTodoList()
+
+        GlobalScope.launch {
+            val deferredResponse = async {
+                RetrofitBuilder().networkInterface.getCurrentWeather()
+            }
+            response = deferredResponse.await()
+
+            // Update the UI on the main thread
+            runOnUiThread {
+                val currentTemp = findViewById<TextView>(R.id.currentTemperatureTextView)
+                val location = findViewById<TextView>(R.id.locationTextView)
+                currentTemp.text = "${response.body()?.current?.temp_c}°C"
+                location.text = "${response.body()?.location?.name}, ${response.body()?.location?.region}"
+            }
+        }
+
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -130,7 +152,8 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
         btCancel.setOnClickListener {
             alertDialogView.dismiss()
         }
-        tvHeader.text = if (!shouldUpdate) getString(R.string.lbl_new_todo_title) else getString(R.string.lbl_edit_todo_title)
+        tvHeader.text =
+            if (!shouldUpdate) getString(R.string.lbl_new_todo_title) else getString(R.string.lbl_edit_todo_title)
 
         alertDialogView.setCancelable(false)
         alertDialogView.show()
@@ -141,7 +164,8 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
      */
     @SuppressLint("NotifyDataSetChanged")
     private fun createNote(todo: Todo) {
-        val id = dbHelper!!.insertTodo(todo)    // inserting note in db and getting newly inserted note id
+        val id =
+            dbHelper!!.insertTodo(todo)    // inserting note in db and getting newly inserted note id
         val new = dbHelper!!.getTodo(id)  // get the newly inserted note from db
         todoList.add(0, new)    // adding new note to array list at 0 position
         myAdapter!!.notifyDataSetChanged()  // refreshing the list
