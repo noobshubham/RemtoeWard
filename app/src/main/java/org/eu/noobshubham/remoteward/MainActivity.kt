@@ -1,6 +1,7 @@
 package org.eu.noobshubham.remoteward
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -50,6 +52,24 @@ class MainActivity : AppCompatActivity(), MyAdapter.OnClickListener {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
         dbHelper = DBHelper(this)
+
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+
+        bottomNavigationView.setOnNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_home -> {
+                    // Navigate to MainActivity (current activity)
+                    true
+                }
+                R.id.menu_favorite -> {
+                    // Navigate to FavActivity
+                    val intent = Intent(this, FavouriteActivity::class.java)
+                    startActivity(intent)
+                    true
+                }
+                else -> false
+            }
+        }
 
         val fab: FloatingActionButton = findViewById(R.id.fab)
         recyclerView = findViewById(R.id.recyclerView)
